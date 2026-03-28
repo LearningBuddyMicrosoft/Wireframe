@@ -1,4 +1,5 @@
 from typing import List, Optional
+from google.auth import default
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import JSON, Column
 
@@ -7,11 +8,15 @@ class User(SQLModel, table=True):
 
     attempts: List["QuizAttempt"] = Relationship(back_populates="user")
     responses: List["Response"] = Relationship(back_populates="user")
+    subjects: List["Subject"] = Relationship(back_populates="user")
 
     username: str
 
 class Subject(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+
+    user_id:int = Field(foreign_key="user.id")
+    user: User = Relationship(back_populates="subjects")
 
     topics: List["Topic"] = Relationship(back_populates="subject")
 
@@ -34,12 +39,11 @@ class Topic(SQLModel, table=True):
 class QuizAttempt(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
-    topic_id: int = Field(foreign_key="topic.id")
-    topic: Topic = Relationship(back_populates="quiz_attempts")
     user_id: int = Field(foreign_key="user.id")
     user: User = Relationship(back_populates="attempts") 
     responses: List["Response"] = Relationship(back_populates="attempt")
 
+    quiz_mode: str = Field(default="single")  # e.g., "single", "batch"
     date: str
     score: int
     feedback: str  # Linked to Mistake Analysis  
@@ -63,6 +67,7 @@ class Question(SQLModel, table=True):
     responses: List["Response"] = Relationship(back_populates="question")
 
     question_type: str
+    difficulty: int
     question_text: str
     options: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON))
     correct_answer: str
